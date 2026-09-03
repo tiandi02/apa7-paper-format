@@ -1,0 +1,41 @@
+{
+  "skill_name": "apa7-paper-format",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "请把一份包含两阶段 GLMM 结果的英文文本生成 APA 7 专业论文 DOCX，其中有一张双面板描述统计表和两张 OR/CI 结果表。",
+      "expected_output": "一份含真实 Word 表格、自动页码、正确统计格式和 APA 7 表题表注的专业论文 DOCX。",
+      "files": [],
+      "expectations": [
+        "使用 create_apa7_docx.py 的 --tables 或直接调用 apa7_word_components.py 生成真实 Word 表格",
+        "表格无竖线、固定列宽、重复表头且数据行禁止跨页拆分",
+        "p、OR、df、n 等统计符号斜体，概率与 p 值无前导零，OR 与其 CI 保留前导零",
+        "运行 validate_apa7_docx.py 并报告验证结果"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "请修改现有论文 DOCX 的 Results 章节，保留 Method、Discussion、页眉和页码，在 Results 中插入新的 APA 表格，并另存为新文件。",
+      "expected_output": "原稿未被覆盖，输出文档只替换目标章节，保留其他章节和页眉关系，并包含合规的 APA Word 表格。",
+      "files": [],
+      "expectations": [
+        "先读取原稿并使用 edit_apa7_docx.py 或等价组件修改副本",
+        "输入与输出路径不同，原稿哈希或修改时间不变",
+        "标题定位唯一；零匹配或多匹配时停止而不猜测",
+        "输出保留页眉、自动页码和未修改章节，并通过独立验证器"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "请审查一份 APA 7 Word 论文的页面设置、表格和统计符号格式，列出问题并生成修正版。",
+      "expected_output": "一份结构检查报告和一份另存的修订版 DOCX，修复可确定的 APA 7 版式、表格与统计格式问题。",
+      "files": [],
+      "expectations": [
+        "使用 validate_apa7_docx.py 检查 DOCX 包、纸张、页边距、字体、行距、页码和孤行寡行控制",
+        "检查表格固定布局、竖线、重复表头、跨页拆行和总列宽",
+        "检查统计符号斜体以及 OR/CI 的前导零",
+        "条件允许时转换为 PDF 并检查空白页、越界、孤立题注和截断表格"
+      ]
+    }
+  ]
+}

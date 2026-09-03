@@ -1,10 +1,10 @@
 # APA 7th 论文格式规范
 
-一个面向 [Claude Code](https://claude.com/claude-code) 的 **Skill**，用于生成严格符合 **APA Style 第 7 版**（*Publication Manual of the American Psychological Association*, 7th ed., 2020）格式的学术论文。
+一个面向 [Claude Code](https://claude.com/claude-code) 与 Codex 的 **Skill**，用于创建、修改和验证符合 **APA Style 第 7 版**（*Publication Manual of the American Psychological Association*, 7th ed., 2020）要求的学术论文 Word 文档。
 
 > 本 skill 根据**最新版 APA 7th 规范（2020 年第 7 版）**制作，涵盖论文要素与版式、作者-日期文内引用、参考文献列表四要素与完整排序（9.44–9.49）、数字与统计符号、标题大小写、公式排版，以及交付前的 APA 7 合规自查清单和 Word 文档生成脚本。
 
-版本：**v1.3**（2026-08-31） · 许可证：[MIT](LICENSE) · 适用：中英文论文
+版本：**v1.4**（2026-09-03） · 许可证：[MIT](LICENSE) · 适用：中英文论文
 
 ## 功能特性
 
@@ -16,7 +16,10 @@
   - 附录表图自动编号（Table A1、Figure C2，每附录独立计数）
   - URL/DOI 真实超链接
 - **参考文献完整排序（APA 9.44–9.49）**：单作者优先、同作者按日期（n.d. 最前 / in press 最后）、同第一作者按后续作者、无作者按标题、同年同作者自动加 a/b/c 后缀
-- **版式自动校验**：生成后自动读回检查页边距、字体、行距、孤行寡行控制、页码域、逐段格式，不达标即报错
+- **真实 APA Word 表格**：支持 JSON 表格规格、多面板表格、固定列宽、无竖线、重复表头、禁止数据行跨页拆分，以及规范的表题和表注
+- **保格式修改既有 DOCX**：按章节或段落替换、在指定位置插入内容和表格、追加内容，同时保留未修改章节、页眉和自动页码；强制另存为新文件
+- **统计格式组件**：自动处理 *p*、*OR*、*df*、*n* 等统计符号的斜体，以及概率、*p* 值、优势比和置信区间的前导零规则
+- **独立文档验证器**：检查 DOCX 包、Letter 纸张、页边距、字体、行距、首行缩进、页码、表格结构和统计格式
 - **回归自检**：`--selftest` 一键跑 40+ 断言（已用 Word 无头打开实测通过）
 
 ## 安装
@@ -33,6 +36,8 @@ git clone https://github.com/<你的用户名>/apa7-paper-format.git \
 **项目级**：复制到项目根目录的 `.claude/skills/apa7-paper-format/`。
 
 安装后在 Claude Code 中直接说"写论文"，或使用 `/<skill-name>` 调用；任何论文写作任务（essay、课程论文、文献综述、毕业论文、研究报告、润色/改写/审查、检查引用）都会自动触发本 skill。
+
+仓库的 `dist/apa7-paper-format.skill` 是已经验证的可迁移安装包；需要在支持 `.skill` 包的环境中安装时，可直接使用该文件。
 
 ## 使用方法
 
@@ -52,8 +57,20 @@ python scripts/create_apa7_docx.py --mode professional \
     --title "..." --author "..." --author-note note.txt \
     --running-head "EFFECT OF X ON Y" --output paper.docx
 
+# 使用 JSON 表格规格生成真实 Word 表格
+python scripts/create_apa7_docx.py --body body.txt --tables tables.json \
+    --output paper-with-tables.docx
+
+# 修改既有文档并另存为新文件
+python scripts/edit_apa7_docx.py --input original.docx \
+    --spec edits.json --output revised.docx
+
+# 独立验证 APA 7 文档
+python scripts/validate_apa7_docx.py revised.docx
+
 # 回归自检
 python scripts/create_apa7_docx.py --selftest
+python scripts/test_apa7_word_upgrade.py
 ```
 
 正文标记示例：
@@ -65,6 +82,7 @@ The model appears in {EQREF:1}, and the results appear in {REF:Table 1}.
 [EQ]d = \frac{\sum_{i=1}^{n} (x_i - M)^2}{n - 1}
 [TABLE]
 [CAPTION]descriptive statistics for study measures
+[TABLEDATA]descriptive_statistics
 [APPENDIX]Appendix A
 ```
 
@@ -73,13 +91,22 @@ The model appears in {EQREF:1}, and the results appear in {REF:Table 1}.
 ```
 apa7-paper-format/
 ├── SKILL.md                     # Skill 定义：工作流程、核心速查表、APA 7 合规自查清单
+├── dist/
+│   └── apa7-paper-format.skill  # 已验证的可迁移安装包
+├── evals/
+│   └── evals.json               # 新建、编辑和验证场景的标准评估任务
 ├── references/
 │   ├── formatting.md            # 论文要素、页序、版式（五级标题/页眉/脚注/附录/表格图）
 │   ├── citations.md             # 文内引用（作者-日期制、et al.、直接引用定位信息）
 │   ├── reference-list.md        # 参考文献四要素、完整排序算法（9.44–9.49）、类型模板
-│   └── mechanics.md             # 数字、统计符号、标题大小写、公式排版
+│   ├── mechanics.md             # 数字、统计符号、标题大小写、公式排版
+│   └── python-word-components.md # Python Word 组件、表格 JSON 和编辑规格说明
 └── scripts/
-    └── create_apa7_docx.py      # 生成 APA 7 版式 .docx（含 --selftest 回归自检）
+    ├── apa7_word_components.py  # APA 版式、真实表格和统计格式公共组件
+    ├── create_apa7_docx.py      # 新建 APA 7 版式 .docx
+    ├── edit_apa7_docx.py        # 保格式修改既有 DOCX
+    ├── validate_apa7_docx.py    # 独立结构与格式验证器
+    └── test_apa7_word_upgrade.py # 新版能力回归测试
 ```
 
 ## 外部要求优先

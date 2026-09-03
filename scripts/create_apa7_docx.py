@@ -29,6 +29,7 @@
   [TABLE]     表格编号行（不写编号则自动 Table 1、2……；附录内自动 Table A1、A2……），加粗、左对齐
   [CAPTION]   表题/图题（斜体、title case、左对齐）；紧跟 [APPENDIX] 之后则为附录标题（加粗、居中）
   [NOTE]      表格/图注（"Note." 斜体开头；特定注的字母用 ^a^ 上标标记）
+  [TABLEDATA] 由 --tables 指定的 JSON 表格 ID；在当前位置插入真正的 APA Word 表格
   [FIGURE]    图编号行（自动 Figure 1、2……；附录内 Figure C2），加粗、左对齐
   [APPENDIX]  附录标签行（如 [APPENDIX]Appendix A），加粗、居中，并分页；
               其后 [TABLE]/[FIGURE] 按该附录字母自动编号，直到出现正文段落或标题
@@ -53,6 +54,7 @@ import argparse
 import contextlib
 import html
 import io
+import json
 import os
 import re
 import sys
@@ -67,6 +69,8 @@ from docx.opc.part import XmlPart
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
+
+from apa7_word_components import add_apa_table_spec, iter_stat_segments
 
 # Windows 控制台默认 GBK，重配为 UTF-8 避免中文输出乱码
 sys.stdout.reconfigure(encoding="utf-8")
@@ -207,6 +211,7 @@ class DocState:
         self.app_counters = {}
         self.table_no = 0
         self.figure_no = 0
+        self.table_specs = {}
 
 
 def _make_run_elm(text, bold=False, italic=False, sup=False, sub=False):
@@ -380,7 +385,12 @@ def append_runs_to_p_elm(p_elm, text, base_bold=False, base_italic=False,
             s, sub = seg[1:-1], True
         if tc:
             s = title_case(s)
-        p_elm.append(_make_run_elm(s, bold, italic, sup, sub))
+        if sup or sub:
+            p_elm.append(_make_run_elm(s, bold, italic, sup, sub))
+        else:
+            for value, stat_italic, stat_sub in iter_stat_segments(s):
+                p_elm.append(_make_run_elm(
+                    value, bold, italic or stat_italic, sub=stat_sub))
 
 
 def add_runs_with_markup(p, text, base_bold=False, base_italic=False, tc=False,
@@ -826,6 +836,14 @@ def _walk_body(doc, state, lines, render=True):
                          indent=0.5, left=0.5, state=state)
             elif render:
                 para(doc, line, left=0.5, state=state)
+            continue
+        if line.startswith("[TABLEDATA]"):
+            after_appendix = False
+            table_id = line.split("]", 1)[1].strip()
+            if render:
+                if table_id not in state.table_specs:
+                    raise ValueError(f"TABLEDATA 未找到表格 ID：{table_id}")
+                add_apa_table_spec(doc, state.table_specs[table_id])
             continue
         if line.startswith("[TABLE]"):
             after_appendix = False
@@ -1342,6 +1360,8 @@ def main():
     ap.add_argument("--keywords-protect", default="",
                     help="关键词专有名词白名单，逗号分隔（整条保留大小写）")
     ap.add_argument("--body", default="", help="正文文本文件（标记语法见文件头 docstring）")
+    ap.add_argument("--tables", default="",
+                    help="JSON 表格规格文件；正文用 [TABLEDATA]表格ID 插入")
     ap.add_argument("--references", default="", help="参考文献文本文件（每行一条，支持行内标记）")
     ap.add_argument("--no-sort", action="store_true",
                     help="参考文献保持输入顺序，不自动按 APA 规则重排")
@@ -1378,6 +1398,9 @@ def main():
     _walk_body(None, scan, body_lines, render=False)  # 预扫描编号：支持前向引用
     state = DocState()
     state.known_bookmarks = scan.known_bookmarks
+    if args.tables:
+        with open(args.tables, encoding="utf-8") as table_file:
+            state.table_specs = json.load(table_file)
     render_body(doc, title, body_lines, state)
 
     ref_lines = open(args.references, encoding="utf-8").readlines() if args.references else []

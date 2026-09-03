@@ -1,23 +1,45 @@
 ---
 name: apa7-paper-format
-description: 用户指定的强制论文格式规范：APA Style 第 7 版（Publication Manual of the American Psychological Association, 7th ed., 2020）。涵盖论文要素与版式（标题页/摘要/关键词/五级标题/字体/行距/页边距/页序/附录/表格图/法律文献）、作者-日期文内引用、参考文献列表四要素与完整排序（9.44–9.49）、数字与统计符号、标题大小写、公式排版，以及交付前的 APA 7 合规自查清单和 .docx 生成脚本（支持真正 Word 脚注、OMML 公式对象与公式编号、题注/公式交叉引用域、附录表图自动编号、多作者多单位标题页、URL 超链接、孤行寡行控制、关键词专名保护）。只要用户要求写论文、写学术论文、写课程论文/作业论文、essay、文献综述、毕业论文、研究报告、论文润色/改写/修改、检查或补全引用与参考文献（无论中英文，无论是否明说 APA），都必须先调用本 skill；用户说"写论文"、"写个 paper"、"帮我写 essay"时也触发。仅适用于学术写作；非学术文体（小说、文案、邮件等）不套用本规范，写作意图不明时先确认用途。与 academic-paper、deep-research 等论文流水线配合时，格式以本 skill 为准。
+description: 用户指定的强制 APA Style 第 7 版学术论文规范与 Word 工具链。用于论文、paper、essay、文献综述、毕业论文、研究报告及任何学术文本的写作、润色、改写、引用检查、参考文献整理和 .docx 交付；无论用户是否明说 APA，只要任务属于学术写作就必须调用。既可用 Python Word 组件新建含标题页、脚注、公式、交叉引用和真实 APA 表格的文档，也可在保留页眉、页码和其他章节的前提下修改既有 DOCX，并可独立验证 Word XML、版式、表格和统计格式。仅非学术文体不适用；期刊、学校或教师的明确要求优先。
 ---
 
-# APA 7th 论文格式规范（v1.3 · 2026-08-31）
+# APA 7th 论文格式规范（v1.4 · 2026-09-03）
 
 本 skill 是用户的强制论文格式标准（APA 第 7 版，2020）。写论文时全文——包括标题页、正文、表格、参考文献——都必须符合此规范；APA 7 与 APA 6 差异较大（如 3+ 作者从首次引用即用 et al.、参考文献最多列出 20 位作者、DOI 统一为 https://doi.org/ 超链接格式），不要沿用旧版习惯。
 
 ## 工作流程
 
-1. **确定论文类型**：学生论文（student paper）还是专业论文（professional paper）？不确定时先问用户。学生论文通常只需要：标题页、页码、正文、参考文献列表；不含 running head、作者注、摘要（除非教师要求）。
-2. **确定论文结构**：按第 2 章要素组织（页序见 `references/formatting.md`）。
-3. **写作**：边写边套用规则——
+1. **确定论文类型与文档动作**：判断是学生论文还是专业论文，以及任务属于新建 DOCX、修改既有 DOCX，还是只检查内容/引用。学生论文通常不含 running head、作者注和摘要，除非教师要求。
+2. **先读取原文件与外部要求**：修改既有文档前先读取内容、样式和表格；保存到新文件，禁止覆盖原稿。期刊、学校或教师模板优先于默认 APA 设置。
+3. **确定论文结构**：按第 2 章要素组织（页序见 `references/formatting.md`）。
+4. **写作**：边写边套用规则——
    - 版式（标题页/字体/行距/页边距/标题层级）→ 读 `references/formatting.md`
    - 文内引用 → 读 `references/citations.md`
    - 参考文献条目 → 读 `references/reference-list.md`
    - 数字与统计符号 → 读 `references/mechanics.md`
-4. **交付前**：逐项跑「APA 7 合规自查清单」（见下文），发现问题立即修正。
-5. **输出 .docx**：用 `scripts/create_apa7_docx.py` 生成符合版式的骨架或整篇文档；改版式细节时优先用它，不要手搓 Word 设置。
+5. **选择 Word 路径**：新建文档用 `scripts/create_apa7_docx.py`；修改既有文档用 `scripts/edit_apa7_docx.py`；复杂表格或定制生成程序直接导入 `scripts/apa7_word_components.py`。具体接口见 `references/python-word-components.md`。
+6. **交付前验证**：先运行 `scripts/validate_apa7_docx.py`，再按「APA 7 合规自查清单」检查内容。条件允许时转换为 PDF，确认无空白页、越界、孤立表题或截断表格。
+
+## Python Word 文档工作流
+
+### 新建 APA 7 文档
+
+- 使用 `create_apa7_docx.py` 保持标题页、摘要、脚注、OMML 公式、交叉引用和参考文献排序能力。
+- 正文用 `[TABLE]`、`[CAPTION]`、`[TABLEDATA]表格ID` 与 `[NOTE]` 组合；`--tables` 接收 JSON 表格规格并生成真正的 Word 表格。
+- 表格组件自动设置固定列宽、重复表头、禁止跨页拆行、必要横线、无竖线、单元格边距和统计符号格式。
+
+### 修改既有 DOCX
+
+- 用 `edit_apa7_docx.py --input 原稿.docx --spec edits.json --output 修订稿.docx`。
+- 编辑规格支持 `replace_section`、`replace_paragraph`、`insert_after` 和 `append_content`；定位文本必须唯一，否则停止并报告歧义。
+- 默认保留页眉、页码、未修改章节和文档关系。仅在规格中设置 `normalize_apa: true` 时统一 Letter 纸张、页边距、字体、行距和标题样式。
+- 输入与输出路径相同会直接报错，确保原稿不被覆盖。
+
+### 统计结果与表格
+
+- 优先把原始数值传给 `format_probability()`、`format_p()`、`format_or()` 和 `format_or_ci()`，避免先行舍入造成二次舍入误差。
+- 概率和 *p* 值省略前导零；可能大于 1 的统计量及 *OR*、*OR* 的置信区间保留前导零。
+- `append_stat_runs()` 自动将 *M*、*SD*、*SE*、*Mdn*、*F*、*t*、*p*、*d*、*r*、*R²*、*OR*、*df*、*N* 和 *n* 设为斜体，并将 n0/n1 的数字设为下标；希腊字母和 CI 保持正体。
 
 ## ⚠ 外部要求优先
 
@@ -54,8 +76,9 @@ description: 用户指定的强制论文格式规范：APA Style 第 7 版（Pub
 - [ ] 每条参考文献四要素齐全、句点位置正确；DOI 用 https://doi.org/ 格式且结尾不加句点
 - [ ] 参考文献排序完整（9.44–9.49）：单作者优先、n.d. 最前/in press 最后、同第一作者按后续作者、无作者按标题；同年同作者多条文献用 2020a/2020b（n.d.-a/in press-a）区分，文内引用同步
 - [ ] 数字规则：≥10 用数字、<10 用单词（统计量、测量单位、百分比例外）
-- [ ] 统计符号斜体；p 值无前导 0；置信区间格式 95% CI [LL, UL]
+- [ ] 统计符号斜体；p 值无前导 0；OR 及其 CI 小于 1 时保留前导 0；置信区间格式 95% CI [LL, UL]
 - [ ] 表格/图：编号 Table 1/Figure 1 加粗，标题斜体，注（一般注→特定注→概率注）位于表格下方/图题之后（细节见 `references/formatting.md`）
+- [ ] Word 表格使用固定列宽、无竖线、表头可跨页重复、数据行禁止跨页拆分，所有列宽均位于正文宽度内
 - [ ] 表格/图均已在正文中被提及后才呈现；正文提及处用题注交叉引用（域）而非手写编号，表图增删后编号自动更新
 - [ ] 附录内表图编号带附录字母：Table A1、Figure C2
 - [ ] 公式：独立成行的公式居中、编号 (1)(2)…右对齐；变量斜体、函数名正体；正文引用写"见公式 1"（或用交叉引用域）
@@ -71,7 +94,9 @@ description: 用户指定的强制论文格式规范：APA Style 第 7 版（Pub
 
 ## 输出格式
 
-- 用户要 Word 文档时：运行 `python scripts/create_apa7_docx.py --help` 查看用法，用它生成或调整版式（配合 docx skill 编辑内容）。
+- 用户要新建 Word 文档时：运行 `python scripts/create_apa7_docx.py --help`；需要真实表格时同时提供 `--tables` JSON。
+- 用户要修改既有 Word 文档时：先读取原稿，再运行 `python scripts/edit_apa7_docx.py --help`，输出到不同路径。
+- 交付前运行 `python scripts/validate_apa7_docx.py 文档.docx`；验证失败时修正后重新运行，不凭肉眼代替结构检查。
 - 交付物遵循全局 CLAUDE.md 文件约束：优先 .docx/.pptx/.pdf，不主动创建 .md 交付物。
 - 中文论文同样适用本规范（标题页、引用、参考文献照 APA 7 处理）。中文文献排序是本 skill 的扩展约定（手册未规定）：按作者拼音与西文条目统一排序；教师/机构另有要求时服从其要求。
 
@@ -83,4 +108,9 @@ description: 用户指定的强制论文格式规范：APA Style 第 7 版（Pub
 | `references/citations.md` | 文内引用全部规则（作者-日期制、et al.、多重引用、转引、引文处理） | 写或检查文内引用时 |
 | `references/reference-list.md` | 参考文献四要素格式、排序规则、常见文献类型模板（期刊/书籍/章节/网页/音视频等）、法律文献（第 11 章）、注释书目（9.51） | 编或检查参考文献列表时 |
 | `references/mechanics.md` | 数字表达、小数、统计符号与排版、标题大小写（6.17）、公式（6.45–6.47） | 写结果部分或含数据内容时 |
-| `scripts/create_apa7_docx.py` | 生成 APA 7 版式 .docx（学生/专业版、多作者多单位标题页、摘要/关键词专名保护、五级标题、块引用、表格图与附录自动编号、真正 Word 脚注 `{FN:}`、OMML 公式 `[EQ]` 与编号、题注/公式交叉引用 `{REF:}/{EQREF:}`、URL 超链接、参考文献完整排序（9.44–9.49）+ 文内-列表对应警告、孤行寡行控制），`--selftest` 回归自检 | 输出 Word 文档时 |
+| `references/python-word-components.md` | Python 组件、表格 JSON、既有文档编辑规格和验证命令 | 创建或修改 DOCX 时 |
+| `scripts/apa7_word_components.py` | 可复用版式、统计格式、表题表注和 APA Word 表格组件 | 编写定制生成/编辑程序时 |
+| `scripts/create_apa7_docx.py` | 生成 APA 7 版式 .docx；支持标题页、脚注、OMML 公式、交叉引用、参考文献排序和 `[TABLEDATA]` 真实表格 | 新建 Word 文档时 |
+| `scripts/edit_apa7_docx.py` | 通过 JSON 操作规格替换章节/段落、插入表格或追加内容，并另存为新 DOCX | 修改既有 Word 文档时 |
+| `scripts/validate_apa7_docx.py` | 检查 DOCX 包、APA 版式、页码、表格结构、前导零和统计符号斜体 | Word 文档交付前 |
+| `scripts/test_apa7_word_upgrade.py` | 新建、编辑、表格、统计格式与验证器的回归测试 | 修改 skill 脚本后 |

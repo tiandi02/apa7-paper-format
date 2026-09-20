@@ -2,9 +2,9 @@
 
 一个面向 [Claude Code](https://claude.com/claude-code) 与 Codex 的 **Skill**，用于创建、修改和验证符合 **APA Style 第 7 版**（*Publication Manual of the American Psychological Association*, 7th ed., 2020）要求的学术论文 Word 文档。
 
-> 本 skill 根据**最新版 APA 7th 规范（2020 年第 7 版）**制作，涵盖论文要素与版式、作者-日期文内引用、参考文献列表四要素与完整排序（9.44–9.49）、数字与统计符号、标题大小写、公式排版，以及交付前的 APA 7 合规自查清单和 Word 文档生成脚本。
+> 本 skill 根据**最新版 APA 7th 规范（2020 年第 7 版）**制作，涵盖论文要素与版式、作者-日期文内引用、参考文献列表四要素与完整排序（9.44–9.49）、数字与统计符号、标题大小写、公式排版，以及交付前的 APA 7 合规自查清单和 Word 文档生成脚本。自 v1.5 起并入手册第 1–12 章按需章节库，覆盖 JARS、写作风格、无偏见语言、表格与图、法律文献和出版流程。
 
-版本：**v1.4**（2026-09-03） · 许可证：[MIT](LICENSE) · 适用：中英文论文
+版本：**v1.5**（2026-09-20） · 许可证：[MIT](LICENSE) · 适用：中英文论文
 
 ## 功能特性
 
@@ -21,6 +21,7 @@
 - **统计格式组件**：自动处理 *p*、*OR*、*df*、*n* 等统计符号的斜体，以及概率、*p* 值、优势比和置信区间的前导零规则
 - **独立文档验证器**：检查 DOCX 包、Letter 纸张、页边距、字体、行距、首行缩进、页码、表格结构和统计格式
 - **回归自检**：`--selftest` 一键跑 40+ 断言（已用 Word 无头打开实测通过）
+- **手册第 1–12 章知识库**：按需加载 `chapters/`，并提供 `glossary.md`、`patterns.md`、`cheatsheet.md`；内容为结构化提炼，标注手册章节来源，不替代 `references/` 中的细则
 
 ## 安装
 
@@ -91,6 +92,12 @@ The model appears in {EQREF:1}, and the results appear in {REF:Table 1}.
 ```
 apa7-paper-format/
 ├── SKILL.md                     # Skill 定义：工作流程、核心速查表、APA 7 合规自查清单
+├── chapters/                    # 手册第 1–12 章按需章节库与主题索引
+│   ├── README.md                # 章节导航与主题索引
+│   └── ch01-*.md … ch12-*.md    # 伦理/JARS/风格/去偏/表图/引用/法律/出版流程
+├── glossary.md                  # APA 7 术语表（含章节引用）
+├── patterns.md                  # 可复用的写作、报告、引用、表图、版权和投稿模式
+├── cheatsheet.md                # 判定规则、阈值与决策表
 ├── dist/
 │   └── apa7-paper-format.skill  # 已验证的可迁移安装包
 ├── evals/
